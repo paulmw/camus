@@ -20,6 +20,7 @@ public class DirectAvroMessageDecoder extends MessageDecoder<Message, Record> {
   private static final Logger log = Logger.getLogger(DirectAvroMessageDecoder.class);
 
   private Schema schema;
+  private GenericDatumReader<Record> datumReader;
 
   @Override
   public void init(Properties props, String topicName) {
@@ -30,19 +31,18 @@ public class DirectAvroMessageDecoder extends MessageDecoder<Message, Record> {
 
       schema = new Schema.Parser().parse(is);
       is.close();
+      datumReader = new GenericDatumReader<Record>(schema);
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
   }
 
+  private BinaryDecoder d;
+
   public Record deserialise(byte [] b) {
-    Record record = null;
-    GenericDatumReader<Record> datumReader = new GenericDatumReader<Record>(schema);
-    BinaryDecoder d = null;
-    d = DecoderFactory.get().binaryDecoder(b, d);
     try {
-      record = datumReader.read(record, d);
-      return record;
+      d = DecoderFactory.get().binaryDecoder(b, d);
+      return datumReader.read(null, d);
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
